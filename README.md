@@ -62,7 +62,9 @@ Here is an exploratory visualization of the data set. It is a bar chart showing 
 
 #### 1. Describe how you preprocessed the image data. What techniques were chosen and why did you choose these techniques? Consider including images showing the output of each preprocessing technique. Pre-processing refers to techniques such as converting to grayscale, normalization, etc. (OPTIONAL: As described in the "Stand Out Suggestions" part of the rubric, if you generated additional data for training, describe why you decided to generate additional data, how you generated the data, and provide example images of the additional data. Then describe the characteristics of the augmented training set like number of images in the set, number of images for each class, etc.)
 
-I approached the problem by first just normalizing the data to a range of -1 to 1. I would then try other preprocessing methods if the 93% accuracy could not be achieved; however, my pipeling was sufficient and no other preprocessing steps were necessary.
+I approached the problem by first just normalizing the data to a range of 0 to 1 and then centering it to 0. I would then try other preprocessing methods if the 93% accuracy could not be achieved; however, my pipeline was sufficient and no other preprocessing steps were necessary. 
+
+I used normalization and 0 centering for a couple reasons. Since the output layer is a softmax layer, it has an output of [0,1] so normalizing to [0,1] allows better mapping. Another reason is that having it centered at 0 allows gradient descent to converge quicker; and, since my optimizer is 'adam', which is a variation of gradient descent, center to 0 allows quicker convergence.
 
 Data normalization was pretty straightforward: Cast as a float and then divide by that max value (255) and subtract 0.5.
 
@@ -98,14 +100,14 @@ Since I used Keras for this project rather than Tensorflow, many of hyperparamet
 
 I started with a Keras implementation of LeNet's CNN, and was able to achieve about 89% accuracy with my starting parameters. I decided to use this architecture becuase it has been used for this type of classification problem before. The training loss and validation loss were very similar. So from here, I decided to use some of the tricks used in class since it seemed the model was not overfitting or underfitting just yet. It seemed the network architecture itself needed some tweaking to get higher accuracy. I decided to first change the epoch to 10 for more training, but that only increased the validation accuracy to 90%.
 
-I decided to add dropout since I was using three fully connected layers at the end and dropouts are useful between fully connected layers. A dropout of 50% increased the accuracy to about 92%. At this point, I noticed I had set the loss to mse, which is more for regression type problems and not classification. I also noticed I did not have a softmax actiavtion from my last layer which would also be useful for this type of problem. So changing the loss to categorical_crossentropy and adding a softmax activation for the last layer increased the validation accuracy to about 94%. I finally decided to change the epochs to 15 just to see if I could get 95% since the loss was still steadily going down; meaning it was not overfitting or underfitting. I was finally able to achieve 95% this way.
+I decided to add dropout since I was using three fully connected layers at the end and dropouts are useful between fully connected layers. A dropout of 50% increased the accuracy to about 92%. At this point, I noticed I had set the loss to mse, which is more for regression type problems and not classification. I also noticed I did not have a softmax actiavtion from my last layer which would also be useful for this type of problem. So changing the loss to categorical_crossentropy and adding a softmax activation for the last layer increased the validation accuracy to about 93%. Finally, I changed the epochs to 15 to stabilize the loss; it stayed around 94%.
 
 Keras model.fit() function comes with the necessary code to produce the accuracy metrics. None of this was impelemented by me. Since the 93% accuracy minimum was achieved pretty easily with this architecture, it supports the notion that LeNet's architecture was a good choice.
 
 My final model results were:
-* training set accuracy of 98.4%
-* validation set accuracy of 95.1%
-* test set accuracy of 93.9%
+* training set accuracy of 98.2%
+* validation set accuracy of 93.6%
+* test set accuracy of 92.1%
 
 ### Test a Model on New Images
 
@@ -131,7 +133,7 @@ Here are the results of the prediction:
 
 | Image			        |     Prediction	        					| 
 |:---------------------:|:---------------------------------------------:| 
-| Speed limit (70km/h)   | Speed limit (70km/h)					        | 
+| Speed limit (70km/h)  | Speed limit (70km/h)					        | 
 | Yield     			| Yield 										|
 | Priority Road			| Priority Road									|
 | Keep right	        | Keep Right					 				|
@@ -142,44 +144,39 @@ The model was able to correctly guess 5 of the 5 traffic signs, which gives an a
 
 #### 3. Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability. (OPTIONAL: as described in the "Stand Out Suggestions" part of the rubric, visualizations can also be provided such as bar charts)
 
-Looking at the softmax values, my network was very positive about the predictions since they were 1.0. All other predictions were very small comparatively.
+Looking at the softmax values, my network was very positive about the predictions since they were 1.0 or .999. All other predictions were very small comparatively. It seems that some of the predictions are greater than 1.0 since the top prediction is 1 and the rest would add up to greathan than 1. But, this is due to casting to float 32 and the way numbers are stored in the model. The others have an effective probability of 0 when the numbers are really small (10E-20 for example).
 
 Example 1
-
-* Sign Value: [4, 0, 1, 39, 37]
-* Sign Name: ['Speed limit (70km/h)', 'Speed limit (20km/h)', 'Speed limit (30km/h)', 'Keep left', 'Go straight or left']
-* Probs: [1.0, 2.4243165e-11, 9.3124787e-12, 5.0900419e-13, 7.6936698e-22] 
+* Sign Value: [4, 0, 1, 39, 33]
+* Sign Name: ['Speed limit (70km/h)', 'Speed limit (20km/h)', 'Speed limit (30km/h)', 'Keep left', 'Turn right ahead']
+* Probs: [1.0, 3.0035403e-09, 3.1933085e-13, 1.8953176e-20, 6.5966291e-22] 
 * Correct Value:  4 
 * Correct Sign: Speed limit (70km/h) 
 
 Example 2
-
-* Sign Value: [13, 35, 34, 9, 15]
-* Sign Name: ['Yield', 'Ahead only', 'Turn left ahead', 'No passing', 'No vehicles']
-* Probs: [1.0, 6.5337173e-30, 3.1067414e-32, 7.1209266e-33, 4.4466865e-33] 
+* Sign Value: [13, 15, 9, 35, 38]
+* Sign Name: ['Yield', 'No vehicles', 'No passing', 'Ahead only', 'Keep right']
+* Probs: [1.0, 1.0978565e-25, 1.5936695e-27, 4.021732e-29, 5.1977345e-32] 
 * Correct Value:  13 
 * Correct Sign: Yield 
 
 Example 3
-
-* Sign Value: [14, 17, 29, 0, 3]
-* Sign Name: ['Stop', 'No entry', 'Bicycles crossing', 'Speed limit (20km/h)', 'Speed limit (60km/h)']
-* Probs: [1.0, 3.0906172e-10, 9.2755408e-11, 1.2837635e-11, 8.7946733e-12] 
+* Sign Value: [14, 17, 29, 6, 11]
+* Sign Name: ['Stop', 'No entry', 'Bicycles crossing', 'End of speed limit (80km/h)', 'Right-of-way at the next intersection']
+* Probs: [0.9999429, 5.7102854e-05, 3.0667435e-09, 1.0783408e-09, 6.4386863e-10] 
 * Correct Value:  14 
 * Correct Sign: Stop 
 
 Example 4
-
-* Sign Value: [35, 36, 34, 33, 38]
-* Sign Name: ['Ahead only', 'Go straight or right', 'Turn left ahead', 'Turn right ahead', 'Keep right']
-* Probs: [1.0, 3.0585937e-13, 2.752024e-15, 4.4884789e-16, 9.6793438e-20] 
+* Sign Value: [35, 36, 34, 3, 6]
+* Sign Name: ['Ahead only', 'Go straight or right', 'Turn left ahead', 'Speed limit (60km/h)', 'End of speed limit (80km/h)']
+* Probs: [1.0, 7.6385103e-16, 2.1744614e-19, 5.6551123e-21, 6.847924e-24] 
 * Correct Value:  35 
 * Correct Sign: Ahead only 
 
 Example 5
-
-* Sign Value: [33, 39, 35, 11, 37]
-* Sign Name: ['Turn right ahead', 'Keep left', 'Ahead only', 'Right-of-way at the next intersection', 'Go straight or left']
-* Probs: [1.0, 2.4337135e-10, 1.5769221e-15, 8.5808726e-16, 3.3698941e-16] 
+* Sign Value: [33, 39, 24, 37, 40]
+* Sign Name: ['Turn right ahead', 'Keep left', 'Road narrows on the right', 'Go straight or left', 'Roundabout mandatory']
+* Probs: [0.99999487, 5.1807724e-06, 1.6847434e-14, 4.4204892e-15, 2.9713672e-15] 
 * Correct Value:  33 
 * Correct Sign: Turn right ahead 
